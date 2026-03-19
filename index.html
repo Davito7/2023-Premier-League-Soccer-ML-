@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Forecast — Soccer Predictor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;
+  --surface:#ffffff;
+  --border:#e8e5de;
+  --text:#1a1917;
+  --muted:#888580;
+  --accent:#2a6a3e;
+  --accent-light:#e8f2ec;
+  --danger:#c0392b;
+  --draw:#b8860b;
+  --radius:14px;
+  --shadow:0 2px 20px rgba(0,0,0,0.06);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid var(--border);background:var(--surface)}
+.logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;letter-spacing:-0.3px}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;gap:28px}
+.nav-links a{font-size:14px;font-weight:400;color:var(--muted);text-decoration:none;cursor:pointer;transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+
+.hero{padding:72px 40px 56px;max-width:900px;margin:0 auto;text-align:center}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,58px);font-weight:600;line-height:1.12;letter-spacing:-1px;margin-bottom:16px}
+.hero h1 em{font-style:italic;color:var(--accent)}
+.hero p{font-size:17px;color:var(--muted);font-weight:300;max-width:480px;margin:0 auto 40px;line-height:1.6}
+.cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--text);color:#fff;border:none;padding:13px 28px;border-radius:100px;font-size:14px;font-weight:500;cursor:pointer;transition:opacity 0.2s,transform 0.15s;font-family:'DM Sans',sans-serif}
+.btn-primary:hover{opacity:0.85;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);padding:13px 28px;border-radius:100px;font-size:14px;font-weight:400;cursor:pointer;transition:background 0.2s;font-family:'DM Sans',sans-serif}
+.btn-ghost:hover{background:var(--border)}
+
+.stats-row{display:flex;justify-content:center;gap:48px;padding:0 40px 64px;max-width:900px;margin:0 auto}
+.stat{text-align:center}
+.stat-n{font-family:'Playfair Display',serif;font-size:32px;font-weight:600}
+.stat-l{font-size:12px;color:var(--muted);margin-top:3px;letter-spacing:0.04em;text-transform:uppercase}
+
+.section{padding:0 40px 80px;max-width:900px;margin:0 auto}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;margin-bottom:28px;letter-spacing:-0.3px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow)}
+.team-row{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-bottom:28px}
+.vs-badge{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--muted);text-align:center}
+.team-select label{display:block;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px}
+.team-select select{width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer}
+.team-select select:focus{outline:none;border-color:var(--accent)}
+.predict-btn{width:100%;padding:15px;background:var(--text);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.2s,transform 0.15s;margin-top:4px}
+.predict-btn:hover:not(:disabled){opacity:0.85;transform:translateY(-1px)}
+.predict-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.results{margin-top:32px;border-top:1px solid var(--border);padding-top:28px;display:none}
+.results.show{display:block}
+.result-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:20px}
+.outcome-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+.outcome-card{text-align:center;padding:20px 12px;border-radius:12px;border:1px solid var(--border)}
+.outcome-pct{font-family:'Playfair Display',serif;font-size:34px;font-weight:600;line-height:1}
+.outcome-name{font-size:12px;color:var(--muted);margin-top:6px;font-weight:400}
+.outcome-card.home{color:var(--accent)}
+.outcome-card.draw{color:var(--draw)}
+.outcome-card.away{color:var(--danger)}
+
+.bar-wrap{display:flex;flex-direction:column;gap:12px}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar-label{font-size:13px;width:100px;text-align:right;color:var(--muted)}
+.bar-track{flex:1;height:8px;background:#eee;border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px;transition:width 1.2s cubic-bezier(.23,1,.32,1);width:0}
+.bar-fill.home{background:var(--accent)}
+.bar-fill.draw{background:var(--draw)}
+.bar-fill.away{background:var(--danger)}
+.bar-pct{font-size:13px;width:40px;font-weight:500}
+.verdict{margin-top:24px;padding:16px 20px;background:var(--accent-light);border-radius:10px;font-size:14px;color:var(--accent);font-weight:500}
+
+.error-msg{margin-top:16px;padding:14px 18px;background:#fdf0ef;border-radius:10px;font-size:14px;color:var(--danger);display:none}
+.error-msg.show{display:block}
+
+.h2h-header{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:20px}
+.h2h-team{font-weight:500;font-size:15px}
+.h2h-team.right{text-align:right}
+.h2h-record{text-align:center}
+.h2h-record .nums{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;letter-spacing:1px}
+.h2h-record .sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.h2h-bar{height:10px;border-radius:100px;overflow:hidden;display:flex;margin-bottom:28px}
+.h2h-bar-a{background:var(--accent);transition:width 1s ease}
+.h2h-bar-d{background:#ddd;transition:width 1s ease}
+.h2h-bar-b{background:var(--danger);transition:width 1s ease}
+.matches-list{display:flex;flex-direction:column;gap:8px}
+.match-row{display:grid;grid-template-columns:1fr auto 1fr auto;gap:10px;align-items:center;padding:10px 14px;border-radius:8px;font-size:13px}
+.match-row:nth-child(odd){background:var(--bg)}
+.match-home{font-weight:500;text-align:right}
+.match-score{text-align:center;font-weight:600;font-family:'Playfair Display',serif;font-size:16px;background:var(--text);color:#fff;padding:2px 10px;border-radius:100px;white-space:nowrap}
+.match-away{font-weight:400}
+.match-result{text-align:right;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap}
+.match-result.A{color:var(--accent)}
+.match-result.D{color:var(--draw)}
+.match-result.B{color:var(--danger)}
+
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{text-align:center;padding:32px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+
+.page{display:none}
+.page.active{display:block}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.5s ease both}
+.fade-up-2{animation:fadeUp 0.5s 0.1s ease both}
+.fade-up-3{animation:fadeUp 0.5s 0.2s ease both}
+
+.api-notice{background:#fffbe6;border:1px solid #f0d060;border-radius:10px;padding:14px 18px;font-size:13px;color:#7a6000;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Fore<span>cast</span></div>
+  <div class="nav-links">
+    <a class="active" onclick="showPage('home',this)">Home</a>
+    <a onclick="showPage('predict',this)">Predictor</a>
+    <a onclick="showPage('h2h',this)">Head to Head</a>
+  </div>
+</nav>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1 class="fade-up">Predict the beautiful<br><em>game</em> with data.</h1>
+    <p class="fade-up-2">ML-powered match predictions built on historical Premier League data. Clean probabilities, no noise.</p>
+    <div class="cta-row fade-up-3">
+      <button class="btn-primary" onclick="showPage('predict', document.querySelectorAll('.nav-links a')[1])">Make a prediction</button>
+      <button class="btn-ghost" onclick="showPage('h2h', document.querySelectorAll('.nav-links a')[2])">Head to head stats</button>
+    </div>
+  </div>
+  <div class="stats-row fade-up-3">
+    <div class="stat"><div class="stat-n">380</div><div class="stat-l">Matches analysed</div></div>
+    <div class="stat"><div class="stat-n" id="team-count">—</div><div class="stat-l">PL Clubs</div></div>
+    <div class="stat"><div class="stat-n">3-way</div><div class="stat-l">Outcome model</div></div>
+    <div class="stat"><div class="stat-n">2023</div><div class="stat-l">Season data</div></div>
+  </div>
+</div>
+
+<!-- PREDICTOR -->
+<div class="page" id="page-predict">
+  <div class="section" style="padding-top:56px">
+    <div class="section-title fade-up">Match Predictor</div>
+    <div class="api-notice">
+      Make sure <strong>api.py</strong> is running on <code>localhost:5000</code> before predicting.
+    </div>
+    <div class="card fade-up-2">
+      <div class="team-row">
+        <div class="team-select">
+          <label>Home Team</label>
+          <select id="home-team" onchange="filterAway()">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+        <div class="vs-badge">vs</div>
+        <div class="team-select">
+          <label>Away Team</label>
+          <select id="away-team">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+      </div>
+      <button class="predict-btn" id="predict-btn" onclick="runPrediction()">Generate Prediction</button>
+      <div class="error-msg" id="predict-error"></div>
+
+      <div class="results" id="results">
+        <div class="result-label">Prediction</div>
+        <div class="outcome-grid">
+          <div class="outcome-card home">
+            <div class="outcome-pct" id="home-pct">—</div>
+            <div class="outcome-name" id="home-name-lbl">Home Win</div>
+          </div>
+          <div class="outcome-card draw">
+            <div class="outcome-pct" id="draw-pct">—</div>
+            <div class="outcome-name">Draw</div>
+          </div>
+          <div class="outcome-card away">
+            <div class="outcome-pct" id="away-pct">—</div>
+            <div class="outcome-name" id="away-name-lbl">Away Win</div>
+          </div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-row">
+            <div class="bar-label" id="bar-home-lbl">Home</div>
+            <div class="bar-track"><div class="bar-fill home" id="bar-home"></div></div>
+            <div class="bar-pct" id="bar-home-pct"></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Draw</div>
+            <div class="bar-track"><div class="bar-fill draw" id="bar-draw"></div></div>
+            <div class="bar-pct" id="bar-draw-pct"></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label" id="bar-away-lbl">Away</div>
+            <div class="bar-track"><div class="bar-fill away" id="bar-away"></div></div>
+            <div class="bar-pct" id="bar-away-pct"></div>
+          </div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- H2H -->
+<div class="page" id="page-h2h">
+  <div class="section" style="padding-top:56px">
+    <div class="section-title fade-up">Head to Head</div>
+    <div class="card fade-up-2" style="margin-bottom:24px">
+      <div class="team-row">
+        <div class="team-select">
+          <label>Team A</label>
+          <select id="h2h-a" onchange="loadH2H()">
+            <option value="">Select team…</option>
+          </select>
+        </div>
+        <div class="vs-badge">vs</div>
+        <div class="team-select">
+          <label>Team B</label>
+          <select id="h2h-b" onchange="loadH2H()">
+            <option value="">Select team…</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card fade-up-3" id="h2h-results" style="display:none">
+      <div class="h2h-header">
+        <div class="h2h-team" id="h2h-name-a">—</div>
+        <div class="h2h-record">
+          <div class="nums" id="h2h-record-display">0 – 0 – 0</div>
+          <div class="sub">W – D – L</div>
+        </div>
+        <div class="h2h-team right" id="h2h-name-b">—</div>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-bar-a" id="hbar-a" style="width:0%"></div>
+        <div class="h2h-bar-d" id="hbar-d" style="width:0%"></div>
+        <div class="h2h-bar-b" id="hbar-b" style="width:0%"></div>
+      </div>
+      <div class="result-label" style="margin-bottom:12px">All meetings</div>
+      <div class="matches-list" id="match-list"></div>
+    </div>
+
+    <div class="card fade-up-3" id="h2h-empty" style="text-align:center;padding:48px;color:var(--muted)">
+      Select two teams to see their head-to-head record.
+    </div>
+  </div>
+</div>
+
+<footer>Forecast · Built on 2023 Premier League data · Random Forest model</footer>
+
+<script>
+const API = "http://localhost:5000";
+let ALL_TEAMS = [];
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch(`${API}/teams`);
+    ALL_TEAMS = await res.json();
+    populateSelects();
+    document.getElementById('team-count').textContent = ALL_TEAMS.length;
+  } catch {
+    // API not running — show placeholder teams so the UI doesn't break
+    ALL_TEAMS = [];
+    ['home-team','away-team','h2h-a','h2h-b'].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '<option value="">API offline</option>';
+    });
+  }
+}
+
+function populateSelects() {
+  ['home-team','away-team','h2h-a','h2h-b'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Select team…</option>';
+    ALL_TEAMS.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function filterAway() {
+  const home = document.getElementById('home-team').value;
+  const away = document.getElementById('away-team');
+  const current = away.value;
+  away.innerHTML = '<option value="">Select team…</option>';
+  ALL_TEAMS.filter(t => t !== home).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    if (t === current) o.selected = true;
+    away.appendChild(o);
+  });
+}
+
+// ── Predictor ─────────────────────────────────────────────────────────────────
+async function runPrediction() {
+  const home = document.getElementById('home-team').value;
+  const away = document.getElementById('away-team').value;
+  const errEl = document.getElementById('predict-error');
+  const btn = document.getElementById('predict-btn');
+
+  errEl.classList.remove('show');
+
+  if (!home || !away) {
+    errEl.textContent = 'Please select both a home and away team.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  // Loading state
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Predicting…';
+
+  try {
+    const res = await fetch(`${API}/predict?home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`);
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    const hp = Math.round(data.home * 100);
+    const dp = Math.round(data.draw * 100);
+    const ap = 100 - hp - dp;
+
+    document.getElementById('home-pct').textContent = hp + '%';
+    document.getElementById('draw-pct').textContent = dp + '%';
+    document.getElementById('away-pct').textContent = ap + '%';
+    document.getElementById('home-name-lbl').textContent = home + ' Win';
+    document.getElementById('away-name-lbl').textContent = away + ' Win';
+    document.getElementById('bar-home-lbl').textContent = home;
+    document.getElementById('bar-away-lbl').textContent = away;
+    document.getElementById('bar-home-pct').textContent = hp + '%';
+    document.getElementById('bar-draw-pct').textContent = dp + '%';
+    document.getElementById('bar-away-pct').textContent = ap + '%';
+
+    const r = document.getElementById('results');
+    r.classList.add('show');
+    ['bar-home','bar-draw','bar-away'].forEach(id => document.getElementById(id).style.width = '0%');
+    setTimeout(() => {
+      document.getElementById('bar-home').style.width = hp + '%';
+      setTimeout(() => document.getElementById('bar-draw').style.width = dp + '%', 100);
+      setTimeout(() => document.getElementById('bar-away').style.width = ap + '%', 200);
+    }, 60);
+
+    const max = Math.max(hp, dp, ap);
+    let verdict;
+    if (hp === max) verdict = `${home} are favoured to win at home — ${hp}% probability.`;
+    else if (dp === max) verdict = `This fixture looks evenly matched — a draw is most likely at ${dp}%.`;
+    else verdict = `${away} are the narrow favourites on the road — ${ap}% probability.`;
+    document.getElementById('verdict').textContent = verdict;
+
+  } catch (err) {
+    errEl.textContent = `Error: ${err.message}. Is api.py running on localhost:5000?`;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Generate Prediction';
+  }
+}
+
+// ── Head to Head ──────────────────────────────────────────────────────────────
+async function loadH2H() {
+  const a = document.getElementById('h2h-a').value;
+  const b = document.getElementById('h2h-b').value;
+
+  if (!a || !b || a === b) {
+    document.getElementById('h2h-results').style.display = 'none';
+    document.getElementById('h2h-empty').style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/h2h?teamA=${encodeURIComponent(a)}&teamB=${encodeURIComponent(b)}`);
+    const data = await res.json();
+    const { matches, summary } = data;
+    const total = summary.teamA_wins + summary.draws + summary.teamB_wins || 1;
+
+    document.getElementById('h2h-name-a').textContent = a;
+    document.getElementById('h2h-name-b').textContent = b;
+    document.getElementById('h2h-record-display').textContent =
+      `${summary.teamA_wins} – ${summary.draws} – ${summary.teamB_wins}`;
+
+    document.getElementById('hbar-a').style.width = (summary.teamA_wins / total * 100) + '%';
+    document.getElementById('hbar-d').style.width = (summary.draws / total * 100) + '%';
+    document.getElementById('hbar-b').style.width = (summary.teamB_wins / total * 100) + '%';
+
+    const list = document.getElementById('match-list');
+    list.innerHTML = '';
+
+    if (matches.length === 0) {
+      list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0">No meetings found in the dataset.</p>';
+    } else {
+      matches.forEach(m => {
+        const label = m.outcome === 'A' ? `${a} win` : m.outcome === 'B' ? `${b} win` : 'Draw';
+        const row = document.createElement('div');
+        row.className = 'match-row';
+        row.innerHTML = `
+          <span class="match-home">${m.home}</span>
+          <span class="match-score">vs</span>
+          <span class="match-away">${m.away}</span>
+          <span class="match-result ${m.outcome}">${label}</span>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('h2h-results').style.display = 'block';
+    document.getElementById('h2h-empty').style.display = 'none';
+
+  } catch (err) {
+    document.getElementById('h2h-empty').style.display = 'block';
+    document.getElementById('h2h-empty').textContent = `Could not load data. Is api.py running? (${err.message})`;
+  }
+}
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>
