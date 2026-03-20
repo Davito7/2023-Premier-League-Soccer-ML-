@@ -23,14 +23,11 @@ for name in names:
 TEAM_NAMES = sorted(team_mapping.keys())
 
 
-# ── GET /teams ────────────────────────────────────────────────────────────────
 # Returns the list of all team names for populating the dropdowns.
 @app.route("/teams")
 def get_teams():
     return jsonify(TEAM_NAMES)
 
-
-# ── GET /predict?home=Arsenal&away=Chelsea ────────────────────────────────────
 # Runs the Random Forest model and returns win/draw/loss probabilities.
 @app.route("/predict")
 def predict():
@@ -61,7 +58,6 @@ def predict():
     })
 
 
-# ── GET /h2h?teamA=Arsenal&teamB=Chelsea ─────────────────────────────────────
 # Returns all historical head-to-head matches between two teams.
 @app.route("/h2h")
 def head_to_head():
@@ -71,7 +67,6 @@ def head_to_head():
     if not team_a or not team_b:
         return jsonify({"error": "Both 'teamA' and 'teamB' query params are required."}), 400
 
-    # Find all matches where either team was home or away
     mask = (
         ((data['home_name'] == team_a) & (data['away_name'] == team_b)) |
         ((data['home_name'] == team_b) & (data['away_name'] == team_a))
@@ -127,5 +122,4 @@ def head_to_head():
 
 
 if __name__ == "__main__":
-    # Runs on http://localhost:5000
     app.run(debug=True, port=5000)
