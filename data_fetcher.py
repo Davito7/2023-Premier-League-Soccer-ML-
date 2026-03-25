@@ -1,8 +1,13 @@
 import requests
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
-API_KEY = "299f42c770f75dada4d4b1570d9f8215"
-HEADERS = {'x-rapidapi-host': "v3.football.api-sports.io", 'x-rapidapi-key': API_KEY}
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY")
+HEADERS = {'x-rapidapi-host': "v3.football.api-sports.io", 
+           'x-rapidapi-key': API_KEY}
 
 def get_historical_matches(league_id, season):
     url = "https://v3.football.api-sports.io/fixtures"
